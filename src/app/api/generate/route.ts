@@ -40,13 +40,29 @@ export async function POST(req: NextRequest) {
     await fs.writeFile(inputPath, JSON.stringify({ sources }), 'utf8');
 
     // Execute Deterministic Tool (Layer 3)
-    return new Promise((resolve) => {
+    return new Promise<NextResponse>((resolve) => {
       const toolProcess = spawn(venvPythonPath, [toolPath, inputPath, outputPath]);
 
+      const TIMEOUT_MS = 60_000;
+      const killTimer = setTimeout(() => {
+        toolProcess.kill('SIGTERM');
+      }, TIMEOUT_MS);
+
+      let stderrBuffer = '';
+      toolProcess.stderr.on('data', (data) => {
+        stderrBuffer += data.toString();
+        console.error(`Tool Stderr: ${data}`);
+      });
+
       toolProcess.on('close', async (code) => {
+        clearTimeout(killTimer);
         try {
-          // Read Output Payload
-          let outputData = { error: 'Unknown tool failure' };
+          const errorDetail = stderrBuffer ? `: ${stderrBuffer.slice(0, 500)}` : '';
+          let outputData: Record<string, unknown> = {
+            error: code === null
+              ? 'Tool process timed out'
+              : `Tool process failed (exit ${code})${errorDetail}`
+          };
           let statusCode = 500;
 
           if (code === 0) {
@@ -64,10 +80,6 @@ export async function POST(req: NextRequest) {
           await fs.rm(inputPath, { force: true }).catch(() => {});
           await fs.rm(outputPath, { force: true }).catch(() => {});
         }
-      });
-      
-      toolProcess.stderr.on('data', (data) => {
-          console.error(`Tool Stderr: ${data}`);
       });
     });
 
