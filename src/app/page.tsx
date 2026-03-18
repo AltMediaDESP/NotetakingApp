@@ -20,6 +20,10 @@ export default function Home() {
     setSources(newSources);
   };
 
+  const handleRemoveSource = (index: number) => {
+    setSources(sources.filter((_, i) => i !== index));
+  };
+
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
@@ -74,13 +78,24 @@ export default function Home() {
         <div className="flex flex-col gap-6 flex-1">
           {sources.map((source, index) => (
             <div key={index} className="flex flex-col gap-3 p-4 bg-neutral-900 rounded-xl border border-neutral-800 shadow-sm focus-within:border-blue-500/50 transition-colors">
-              <input
-                type="text"
-                placeholder={`Source ${index + 1} Title`}
-                value={source.title}
-                onChange={(e) => updateSource(index, "title", e.target.value)}
-                className="bg-transparent border-b border-neutral-800 pb-2 text-sm font-medium focus:outline-none focus:border-blue-500 transition-colors placeholder:text-neutral-600"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder={`Source ${index + 1} Title`}
+                  value={source.title}
+                  onChange={(e) => updateSource(index, "title", e.target.value)}
+                  className="bg-transparent border-b border-neutral-800 pb-2 text-sm font-medium focus:outline-none focus:border-blue-500 transition-colors placeholder:text-neutral-600 flex-1"
+                />
+                {sources.length > 1 && (
+                  <button
+                    onClick={() => handleRemoveSource(index)}
+                    className="mb-2 text-neutral-600 hover:text-red-400 transition-colors text-xs"
+                    aria-label="Remove source"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
               <textarea
                 placeholder="Paste transcript or notes here..."
                 value={source.content}
