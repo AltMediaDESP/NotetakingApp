@@ -4,15 +4,21 @@ import path from 'path';
 import fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
 
+const MAX_BODY_BYTES = 500_000; // 500 KB
+
 export async function POST(req: NextRequest) {
   try {
-    const MAX_BODY_BYTES = 500_000; // 500 KB
     const contentLength = req.headers.get('content-length');
-    if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
+    const length = parseInt(contentLength ?? '', 10);
+    if (!isNaN(length) && length > MAX_BODY_BYTES) {
       return NextResponse.json({ error: 'Request body too large (max 500KB)' }, { status: 413 });
     }
 
     const body = await req.json();
+    const bodySize = Buffer.byteLength(JSON.stringify(body));
+    if (bodySize > MAX_BODY_BYTES) {
+      return NextResponse.json({ error: 'Request body too large (max 500KB)' }, { status: 413 });
+    }
     const sources = body.sources;
 
     if (!Array.isArray(sources) || sources.length === 0) {
