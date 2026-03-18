@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import ReactMarkdown from "react-markdown";
 import { Loader2, Plus, FileText, Send } from "lucide-react";
 
 export default function Home() {
-  const [sources, setSources] = useState([{ title: "", content: "" }]);
+  const [sources, setSources] = useState([{ id: uuidv4(), title: "", content: "" }]);
   const [note, setNote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleAddSource = () => {
-    setSources([...sources, { title: "", content: "" }]);
+    setSources([...sources, { id: uuidv4(), title: "", content: "" }]);
   };
 
   const updateSource = (index: number, field: "title" | "content", value: string) => {
@@ -42,7 +43,7 @@ export default function Home() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sources: validSources }),
+        body: JSON.stringify({ sources: validSources.map(({ title, content }) => ({ title, content })) }),
       });
 
       const data = await res.json();
@@ -77,7 +78,7 @@ export default function Home() {
 
         <div className="flex flex-col gap-6 flex-1">
           {sources.map((source, index) => (
-            <div key={index} className="flex flex-col gap-3 p-4 bg-neutral-900 rounded-xl border border-neutral-800 shadow-sm focus-within:border-blue-500/50 transition-colors">
+            <div key={source.id} className="flex flex-col gap-3 p-4 bg-neutral-900 rounded-xl border border-neutral-800 shadow-sm focus-within:border-blue-500/50 transition-colors">
               <div className="flex items-center gap-2">
                 <input
                   type="text"
