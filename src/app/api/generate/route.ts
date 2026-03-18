@@ -79,8 +79,8 @@ export async function POST(req: NextRequest) {
 
           resolve(NextResponse.json(outputData, { status: statusCode }));
 
-        } catch (e: any) {
-          resolve(NextResponse.json({ error: `Failed to read tool output: ${e.message}` }, { status: 500 }));
+        } catch (e) {
+          resolve(NextResponse.json({ error: `Failed to read tool output: ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }));
         } finally {
           // Self-cleaning: Remove temporary intermediates
           await fs.rm(inputPath, { force: true }).catch(() => {});
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
       });
     });
 
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }
