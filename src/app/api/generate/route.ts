@@ -5,6 +5,7 @@ import fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
 
 const MAX_BODY_BYTES = 500_000; // 500 KB
+const TIMEOUT_MS = 60_000;
 
 export async function POST(req: NextRequest) {
   try {
@@ -43,15 +44,20 @@ export async function POST(req: NextRequest) {
     return new Promise<NextResponse>((resolve) => {
       const toolProcess = spawn(venvPythonPath, [toolPath, inputPath, outputPath]);
 
-      const TIMEOUT_MS = 60_000;
       const killTimer = setTimeout(() => {
         toolProcess.kill('SIGTERM');
+        setTimeout(() => toolProcess.kill('SIGKILL'), 5_000);
       }, TIMEOUT_MS);
+
+      toolProcess.on('error', (err) => {
+        clearTimeout(killTimer);
+        resolve(NextResponse.json({ error: `Failed to start tool: ${err.message}` }, { status: 500 }));
+      });
 
       let stderrBuffer = '';
       toolProcess.stderr.on('data', (data) => {
-        stderrBuffer += data.toString();
-        console.error(`Tool Stderr: ${data}`);
+        if (stderrBuffer.length < 1000) stderrBuffer += data.toString();
+        console.error('Tool Stderr:', data.toString());
       });
 
       toolProcess.on('close', async (code) => {
