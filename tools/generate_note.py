@@ -37,9 +37,10 @@ def generate_with_gemini(api_key, context_text):
     }
     
     response = requests.post(url, json=payload)
-    response.raise_for_status()
+    if not response.ok:
+        raise Exception(f"Gemini API error {response.status_code}: {response.text[:500]}")
     data = response.json()
-    
+
     # Extract text from Gemini response structure
     try:
         return data['candidates'][0]['content']['parts'][0]['text']
@@ -65,7 +66,8 @@ def generate_with_openai(api_key, context_text):
     }
     
     response = requests.post(url, headers=headers, json=payload)
-    response.raise_for_status()
+    if not response.ok:
+        raise Exception(f"OpenAI API error {response.status_code}: {response.text[:500]}")
     data = response.json()
     
     try:
