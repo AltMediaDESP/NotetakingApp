@@ -27,6 +27,7 @@
 # runtime temp files
 /.tmp/
 /.venv/
+/skills/
 
 # debug
 npm-debug.log*
