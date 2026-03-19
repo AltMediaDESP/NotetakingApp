@@ -31,7 +31,9 @@ export async function POST(req: NextRequest) {
     const tmpDir = path.join(process.cwd(), '.tmp');
     const inputPath = path.join(tmpDir, `${taskId}_input.json`);
     const outputPath = path.join(tmpDir, `${taskId}_output.json`);
-    const venvPythonPath = path.join(process.cwd(), '.venv', 'bin', 'python');
+    const venvPythonPath = process.platform === 'win32'
+      ? path.join(process.cwd(), '.venv', 'Scripts', 'python.exe')
+      : path.join(process.cwd(), '.venv', 'bin', 'python');
     const toolPath = path.join(process.cwd(), 'tools', 'generate_note.py');
 
     // Ensure .tmp/ exists
