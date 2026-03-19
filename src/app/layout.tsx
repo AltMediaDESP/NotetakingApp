@@ -3,7 +3,7 @@ import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
-  title: "NotetakingApp",
+  title: "Synapse",
   description: "AI-powered study guide synthesis",
 };
 
