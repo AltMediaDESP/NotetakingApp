@@ -293,7 +293,7 @@ export default function NotePage() {
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-gray-400 px-8 text-center max-w-md mx-auto">
             <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-gray-200">
-              <FileText size={24} className="text-gray-400" />
+              <Image src="/synapse-logo.png" alt="Synapse" width={24} height={24} className="rounded-md opacity-40" />
             </div>
             <h2 className="text-xl font-medium text-gray-700 mb-2">
               {isNew ? "Add sources to get started" : "Loading note..."}
