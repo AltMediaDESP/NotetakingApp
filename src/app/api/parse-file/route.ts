@@ -20,7 +20,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (file.name.endsWith('.pdf')) {
-      const pdfParse = (await import('pdf-parse')).default;
+      // Use inner module path to avoid pdf-parse v1 test file loading issue
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const pdfParse = require('pdf-parse/lib/pdf-parse.js');
       const data = await pdfParse(buffer);
       return NextResponse.json({ text: data.text });
     }
