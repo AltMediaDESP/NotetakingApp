@@ -190,7 +190,7 @@ export default function Home() {
       <div className={`w-full md:w-1/3 md:min-w-[350px] border-r border-gray-200 bg-white p-6 flex flex-col overflow-y-auto ${mobileTab === "sources" ? "flex" : "hidden"} md:flex`}>
         <div className="flex items-center gap-2 mb-8">
           <FileText className="text-gray-600" />
-          <h1 className="text-xl font-bold tracking-tight flex-1">NotetakingApp</h1>
+          <h1 className="text-xl font-bold tracking-tight flex-1">Synapse</h1>
           <button onClick={handleNewNote} title="New note" className="text-gray-400 hover:text-gray-700 transition-colors">
             <PenLine size={16} />
           </button>
