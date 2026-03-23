@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { Loader2, Plus, FileText, Send, LogOut, ChevronDown, ChevronRight, Clock, PenLine, Trash2 } from "lucide-react";
+import { Loader2, Plus, FileText, Send, LogOut, ChevronDown, ChevronRight, Clock, PenLine, Trash2, Upload } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -53,6 +53,29 @@ export default function Home() {
 
   const handleRemoveSource = (index: number) => {
     setSources(sources.filter((_, i) => i !== index));
+  };
+
+  const handleFileUpload = async (index: number, file: File) => {
+    if (file.name.endsWith('.txt')) {
+      const text = await file.text();
+      updateSource(index, 'content', text);
+      if (!sources[index].title) updateSource(index, 'title', file.name.replace('.txt', ''));
+      return;
+    }
+    if (file.name.endsWith('.pdf')) {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/parse-file', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.text) {
+        updateSource(index, 'content', data.text);
+        if (!sources[index].title) updateSource(index, 'title', file.name.replace('.pdf', ''));
+      } else {
+        setError(data.error ?? 'Failed to parse file');
+      }
+      return;
+    }
+    setError('Unsupported file type. Use .pdf or .txt');
   };
 
   const fetchHistory = useCallback(async () => {
@@ -283,6 +306,20 @@ export default function Home() {
                 onChange={(e) => updateSource(index, "content", e.target.value)}
                 className="bg-transparent resize-none h-32 text-sm focus:outline-none placeholder:text-gray-400 leading-relaxed text-gray-700"
               />
+              <label className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 cursor-pointer transition-colors w-fit">
+                <Upload size={12} />
+                Upload .pdf or .txt
+                <input
+                  type="file"
+                  accept=".pdf,.txt"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileUpload(index, file);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
             </div>
           ))}
 
