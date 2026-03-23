@@ -59,7 +59,7 @@ export default function Dashboard() {
 
       {/* Banner */}
       <div className="relative w-full h-40 sm:h-52 overflow-hidden">
-        <Image src="/synapse-banner.png" alt="" fill className="object-cover object-center" priority />
+        <Image src="/synapse-banner.png" alt="" fill className="object-cover object-center" priority quality={100} />
         <div className="absolute inset-0 bg-navy-900/40" />
         <div className="absolute inset-0 flex flex-col justify-center px-8 sm:px-12">
           <h2 className="text-white text-2xl sm:text-3xl font-bold tracking-tight drop-shadow">Synapse</h2>
