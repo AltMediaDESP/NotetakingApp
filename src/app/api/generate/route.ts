@@ -8,11 +8,14 @@ Your task is to take the provided raw transcripts, handwritten OCR notes, and te
 
 RULES:
 - Use clear headings (H1, H2, H3), bullet points, and bold text for emphasis.
-- Create a "Summary" section at the top.
-- Create a "Key Concepts" section next.
-- Organize the rest logically based on topics.
+- Create a "Summary" section at the top with the core thesis or main idea in 2-4 sentences.
+- Create a "Key Concepts" section next with only the most important terms and ideas.
+- Organize the rest logically based on topics covered.
 - If the context mentions definitions, emphasize them.
+- IGNORE filler content: personal anecdotes, jokes, off-topic monologuing, repeated phrases, and conversational tangents that don't contribute to the academic content.
+- FOCUS on: facts, concepts, definitions, arguments, evidence, and conclusions.
 - DO NOT hallucinate external facts. Base the notes strictly on the provided context.
+- Be concise — distill ideas, don't transcribe them.
 
 CONTEXT RESOURCES TO SYNTHESIZE:
 ${contextText}`;
