@@ -74,7 +74,7 @@ export default function Dashboard() {
         ) : notes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-28 text-center">
             <div className="w-16 h-16 bg-white rounded-2xl border border-gray-200 flex items-center justify-center mb-5 shadow-sm">
-              <FileText size={24} className="text-gray-300" />
+              <Image src="/synapse-logo.png" alt="Synapse" width={24} height={24} className="rounded-md opacity-30" />
             </div>
             <h2 className="text-lg font-medium text-gray-700 mb-2">No notes yet</h2>
             <p className="text-sm text-gray-400 mb-6">Upload a transcript or source to generate your first study guide.</p>
