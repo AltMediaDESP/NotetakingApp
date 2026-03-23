@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, LogOut, Plus, Trash2, Clock } from "lucide-react";
+import Image from "next/image";
+import { LogOut, Plus, Trash2, Clock } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
 
@@ -48,7 +49,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3">
-        <FileText size={18} className="text-gray-500" />
+        <Image src="/synapse-logo.png" alt="Synapse" width={28} height={28} className="rounded-md" />
         <span className="text-lg font-bold text-gray-900 flex-1">Synapse</span>
         <span className="text-sm text-gray-400 hidden sm:block">{user?.email}</span>
         <button onClick={signOut} title="Sign out" className="text-gray-400 hover:text-gray-700 transition-colors ml-2">

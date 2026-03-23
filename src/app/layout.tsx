@@ -5,6 +5,7 @@ import AuthProvider from "@/components/AuthProvider";
 export const metadata: Metadata = {
   title: "Synapse",
   description: "AI-powered study guide synthesis",
+  icons: { icon: "/synapse-logo.png" },
 };
 
 export default function RootLayout({

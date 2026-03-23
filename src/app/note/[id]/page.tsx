@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
-import { Loader2, Plus, FileText, Send, LogOut, ArrowLeft, Trash2, Upload } from "lucide-react";
+import Image from "next/image";
+import { Loader2, Plus, Send, LogOut, ArrowLeft, Trash2, Upload } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -192,7 +193,7 @@ export default function NotePage() {
           <button onClick={() => router.push("/")} className="text-gray-400 hover:text-gray-700 transition-colors" title="Back to dashboard">
             <ArrowLeft size={16} />
           </button>
-          <FileText className="text-gray-600" size={16} />
+          <Image src="/synapse-logo.png" alt="Synapse" width={22} height={22} className="rounded-md" />
           <h1 className="text-xl font-bold tracking-tight flex-1">Synapse</h1>
           {noteId && (
             <button onClick={handleDelete} title="Delete note" className="text-gray-300 hover:text-red-500 transition-colors">
