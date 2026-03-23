@@ -57,6 +57,16 @@ export default function Dashboard() {
         </button>
       </header>
 
+      {/* Banner */}
+      <div className="relative w-full h-40 sm:h-52 overflow-hidden">
+        <Image src="/synapse-banner.png" alt="" fill className="object-cover object-center" priority />
+        <div className="absolute inset-0 bg-navy-900/40" />
+        <div className="absolute inset-0 flex flex-col justify-center px-8 sm:px-12">
+          <h2 className="text-white text-2xl sm:text-3xl font-bold tracking-tight drop-shadow">Synapse</h2>
+          <p className="text-blue-100 text-sm sm:text-base mt-1 drop-shadow">AI-powered study guides from your sources</p>
+        </div>
+      </div>
+
       {/* Main */}
       <main className="max-w-6xl mx-auto px-6 py-10">
         <div className="flex items-center justify-between mb-8">
