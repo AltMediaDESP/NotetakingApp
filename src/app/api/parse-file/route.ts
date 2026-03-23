@@ -20,8 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (file.name.endsWith('.pdf')) {
-      // Dynamically import to avoid pdf-parse test file issues at module load time
-      const pdfParse = (await import('pdf-parse/lib/pdf-parse.js')).default;
+      const pdfParse = (await import('pdf-parse')).default;
       const data = await pdfParse(buffer);
       return NextResponse.json({ text: data.text });
     }
