@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { spawn } from 'child_process';
-import path from 'path';
-import fs from 'fs/promises';
-import { v4 as uuidv4 } from 'uuid';
 
-const MAX_BODY_BYTES = 500_000; // 500 KB
-const TIMEOUT_MS = 60_000;
+const MAX_BODY_BYTES = 500_000;
+
+function buildPrompt(contextText: string): string {
+  return `You are a professional academic assistant, similar to NotebookLM.
+Your task is to take the provided raw transcripts, handwritten OCR notes, and textbook excerpts, and synthesize them into a highly organized, professional markdown study guide.
+
+RULES:
+- Use clear headings (H1, H2, H3), bullet points, and bold text for emphasis.
+- Create a "Summary" section at the top.
+- Create a "Key Concepts" section next.
+- Organize the rest logically based on topics.
+- If the context mentions definitions, emphasize them.
+- DO NOT hallucinate external facts. Base the notes strictly on the provided context.
+
+CONTEXT RESOURCES TO SYNTHESIZE:
+${contextText}`;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,82 +27,63 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const bodySize = Buffer.byteLength(JSON.stringify(body));
-    if (bodySize > MAX_BODY_BYTES) {
+    if (Buffer.byteLength(JSON.stringify(body)) > MAX_BODY_BYTES) {
       return NextResponse.json({ error: 'Request body too large (max 500KB)' }, { status: 413 });
     }
-    const sources = body.sources;
 
+    const sources = body.sources;
     if (!Array.isArray(sources) || sources.length === 0) {
       return NextResponse.json({ error: 'Valid sources array required' }, { status: 400 });
     }
 
-    // Generate unique task IDs for .tmp/ storage
-    const taskId = uuidv4();
-    const tmpDir = path.join(process.cwd(), '.tmp');
-    const inputPath = path.join(tmpDir, `${taskId}_input.json`);
-    const outputPath = path.join(tmpDir, `${taskId}_output.json`);
-    const venvPythonPath = process.platform === 'win32'
-      ? path.join(process.cwd(), '.venv', 'Scripts', 'python.exe')
-      : path.join(process.cwd(), '.venv', 'bin', 'python');
-    const toolPath = path.join(process.cwd(), 'tools', 'generate_note.py');
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: 'GEMINI_API_KEY is not configured' }, { status: 500 });
+    }
 
-    // Ensure .tmp/ exists
-    await fs.mkdir(tmpDir, { recursive: true });
+    const contextText = sources
+      .map((s: { title?: string; content?: string }) =>
+        `TITLE: ${s.title ?? 'Untitled'}\nCONTENT:\n${s.content ?? ''}`
+      )
+      .join('\n\n--- DOCUMENT BOUNDARY ---\n\n');
 
-    // Write input payload
-    await fs.writeFile(inputPath, JSON.stringify({ sources }), 'utf8');
+    const prompt = buildPrompt(contextText);
 
-    // Execute Deterministic Tool (Layer 3)
-    return new Promise<NextResponse>((resolve) => {
-      const toolProcess = spawn(venvPythonPath, [toolPath, inputPath, outputPath]);
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          systemInstruction: {
+            parts: [{ text: 'You are an expert Note-taking AI assistant adhering strictly to provided source material.' }],
+          },
+          generationConfig: { temperature: 0.2 },
+        }),
+      }
+    );
 
-      const killTimer = setTimeout(() => {
-        toolProcess.kill('SIGTERM');
-        setTimeout(() => toolProcess.kill('SIGKILL'), 5_000);
-      }, TIMEOUT_MS);
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      return NextResponse.json(
+        { error: `Gemini API error ${geminiRes.status}: ${errText.slice(0, 500)}` },
+        { status: 500 }
+      );
+    }
 
-      toolProcess.on('error', (err) => {
-        clearTimeout(killTimer);
-        resolve(NextResponse.json({ error: `Failed to start tool: ${err.message}` }, { status: 500 }));
-      });
+    const data = await geminiRes.json();
+    const markdown: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-      let stderrBuffer = '';
-      toolProcess.stderr.on('data', (data) => {
-        if (stderrBuffer.length < 1000) stderrBuffer += data.toString();
-        console.error('Tool Stderr:', data.toString());
-      });
+    if (!markdown) {
+      return NextResponse.json({ error: 'No content returned from Gemini' }, { status: 500 });
+    }
 
-      toolProcess.on('close', async (code) => {
-        clearTimeout(killTimer);
-        try {
-          const errorDetail = stderrBuffer ? `: ${stderrBuffer.slice(0, 500)}` : '';
-          let outputData: Record<string, unknown> = {
-            error: code === null
-              ? 'Tool process timed out'
-              : `Tool process failed (exit ${code})${errorDetail}`
-          };
-          let statusCode = 500;
-
-          if (code === 0) {
-            const outputBuffer = await fs.readFile(outputPath, 'utf8');
-            outputData = JSON.parse(outputBuffer);
-            statusCode = 200;
-          }
-
-          resolve(NextResponse.json(outputData, { status: statusCode }));
-
-        } catch (e) {
-          resolve(NextResponse.json({ error: `Failed to read tool output: ${e instanceof Error ? e.message : String(e)}` }, { status: 500 }));
-        } finally {
-          // Self-cleaning: Remove temporary intermediates
-          await fs.rm(inputPath, { force: true }).catch(() => {});
-          await fs.rm(outputPath, { force: true }).catch(() => {});
-        }
-      });
-    });
-
+    return NextResponse.json({ markdown });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
   }
 }
