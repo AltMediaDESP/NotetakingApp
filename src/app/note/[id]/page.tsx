@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import Image from "next/image";
@@ -25,6 +25,7 @@ export default function NotePage() {
   const [saving, setSaving] = useState(false);
   const [mobileTab, setMobileTab] = useState<"sources" | "note">("sources");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const { status: saveStatus } = useAutoSave(noteId, note ?? "", 1000);
 
@@ -36,11 +37,13 @@ export default function NotePage() {
       .select("content, title")
       .eq("id", id)
       .single()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (data) {
           setNote(data.content);
           setNoteTitle(data.title ?? "");
           setMobileTab("note");
+        } else if (error) {
+          setLoadError(true);
         }
       });
   }, [id, isNew, user]);
@@ -110,21 +113,31 @@ export default function NotePage() {
       const sourceIds = (savedSources ?? []).map((s: { id: string }) => s.id);
       const firstHeading = markdown.match(/^#\s+(.+)$/m)?.[1] ?? "Untitled Note";
 
-      const { data: noteData, error: noteError } = await supabase.from("notes").insert({
-        user_id: user.id,
-        title: firstHeading,
-        content: markdown,
-        source_ids: sourceIds,
-        is_ai_generated: true,
-        last_autosaved: new Date().toISOString(),
-      }).select("id").single();
+      if (noteId) {
+        await supabase.from("notes").update({
+          title: firstHeading,
+          content: markdown,
+          source_ids: sourceIds,
+          last_autosaved: new Date().toISOString(),
+        }).eq("id", noteId);
+        setNoteTitle(firstHeading);
+      } else {
+        const { data: noteData, error: noteError } = await supabase.from("notes").insert({
+          user_id: user.id,
+          title: firstHeading,
+          content: markdown,
+          source_ids: sourceIds,
+          is_ai_generated: true,
+          last_autosaved: new Date().toISOString(),
+        }).select("id").single();
 
-      if (noteError) throw noteError;
-      if (noteData) {
-        setNoteId(noteData.id);
-        router.replace(`/note/${noteData.id}`);
+        if (noteError) throw noteError;
+        if (noteData) {
+          setNoteId(noteData.id);
+          router.replace(`/note/${noteData.id}`);
+        }
+        setNoteTitle(firstHeading);
       }
-      setNoteTitle(firstHeading);
     } catch (e) {
       console.error("Failed to save:", e);
     } finally {
@@ -159,6 +172,7 @@ export default function NotePage() {
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+      setMobileTab("sources");
     } finally {
       setLoading(false);
     }
@@ -255,6 +269,11 @@ export default function NotePage() {
                 onChange={(e) => updateSource(index, "content", e.target.value)}
                 className="bg-transparent resize-none h-32 text-sm focus:outline-none placeholder:text-gray-400 leading-relaxed text-gray-700"
               />
+              {source.content.trim() && (
+                <span className="text-xs text-gray-300">
+                  {source.content.trim().split(/\s+/).length} words
+                </span>
+              )}
               <label className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 cursor-pointer transition-colors w-fit">
                 <Upload size={12} />
                 Upload .pdf or .txt
@@ -289,7 +308,7 @@ export default function NotePage() {
             className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3.5 rounded-xl font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
             {loading ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
-            {loading ? "Synthesizing Notes..." : "Generate Professional Note"}
+            {loading ? "Synthesizing Notes..." : noteId ? "Regenerate Note" : "Generate Professional Note"}
           </button>
         </div>
       </div>
@@ -308,10 +327,10 @@ export default function NotePage() {
               <Image src="/synapse-logo.png" alt="Synapse" width={24} height={24} className="rounded-md opacity-40" />
             </div>
             <h2 className="text-xl font-medium text-gray-700 mb-2">
-              {isNew ? "Add sources to get started" : "Loading note..."}
+              {isNew ? "Add sources to get started" : loadError ? "Note not found" : "Loading note..."}
             </h2>
             <p className="text-sm leading-relaxed">
-              {isNew ? "Paste your raw context on the left and hit Generate." : ""}
+              {isNew ? "Paste your raw context on the left and hit Generate." : loadError ? "This note may have been deleted or you don't have access to it." : ""}
             </p>
           </div>
         )}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { LogOut, Plus, Trash2, Clock } from "lucide-react";
+import { LogOut, Plus, Trash2, Clock, Search } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
 
@@ -20,6 +20,7 @@ export default function Dashboard() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -50,6 +51,10 @@ export default function Dashboard() {
     e.stopPropagation();
     setConfirmDeleteId(null);
   };
+
+  const filteredNotes = search.trim()
+    ? notes.filter((n) => n.title.toLowerCase().includes(search.toLowerCase()) || n.content.toLowerCase().includes(search.toLowerCase()))
+    : notes;
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -82,7 +87,12 @@ export default function Dashboard() {
       {/* Main */}
       <main className="max-w-6xl mx-auto px-6 py-10">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">My Notes</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            My Notes
+            {!loading && notes.length > 0 && (
+              <span className="ml-2.5 text-sm font-normal text-gray-400">{notes.length}</span>
+            )}
+          </h1>
           <button
             onClick={() => router.push("/note/new")}
             className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
@@ -90,6 +100,19 @@ export default function Dashboard() {
             <Plus size={15} /> New Note
           </button>
         </div>
+
+        {!loading && notes.length > 0 && (
+          <div className="relative mb-6">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search notes..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full sm:w-72 pl-8 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors placeholder:text-gray-400"
+            />
+          </div>
+        )}
 
         {loading ? (
           <div className="text-sm text-gray-400 mt-16 text-center">Loading...</div>
@@ -109,7 +132,9 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {notes.map((note) => (
+            {filteredNotes.length === 0 ? (
+              <p className="col-span-full text-sm text-gray-400 text-center py-16">No notes match "{search}"</p>
+            ) : filteredNotes.map((note) => (
               <div
                 key={note.id}
                 onClick={() => router.push(`/note/${note.id}`)}
@@ -156,6 +181,7 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+
     </div>
   );
 }
