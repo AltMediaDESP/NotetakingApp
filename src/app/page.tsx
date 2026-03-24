@@ -19,6 +19,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -33,10 +34,21 @@ export default function Dashboard() {
       });
   }, [user]);
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
+  const handleDeleteClick = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setConfirmDeleteId(id);
+  };
+
+  const handleDeleteConfirm = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     await supabase.from("notes").delete().eq("id", id);
     setNotes((prev) => prev.filter((n) => n.id !== id));
+    setConfirmDeleteId(null);
+  };
+
+  const handleDeleteCancel = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmDeleteId(null);
   };
 
   const formatDate = (iso: string) =>
@@ -103,13 +115,30 @@ export default function Dashboard() {
                 onClick={() => router.push(`/note/${note.id}`)}
                 className="bg-white rounded-xl border border-gray-200 p-5 cursor-pointer hover:border-gray-300 hover:shadow-sm transition-all group relative"
               >
-                <button
-                  onClick={(e) => handleDelete(e, note.id)}
-                  title="Delete note"
-                  className="absolute top-4 right-4 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                >
-                  <Trash2 size={14} />
-                </button>
+                {confirmDeleteId === note.id ? (
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={(e) => handleDeleteConfirm(e, note.id)}
+                      className="text-xs text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded transition-colors"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      onClick={handleDeleteCancel}
+                      className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={(e) => handleDeleteClick(e, note.id)}
+                    title="Delete note"
+                    className="absolute top-4 right-4 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
                 <h3 className="font-semibold text-gray-900 text-sm mb-2 pr-6 line-clamp-2 leading-snug">
                   {note.title || "Untitled Note"}
                 </h3>

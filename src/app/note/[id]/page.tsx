@@ -24,6 +24,7 @@ export default function NotePage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [mobileTab, setMobileTab] = useState<"sources" | "note">("sources");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const { status: saveStatus } = useAutoSave(noteId, note ?? "", 1000);
 
@@ -196,9 +197,20 @@ export default function NotePage() {
           <Image src="/synapse-logo.png" alt="Synapse" width={22} height={22} className="rounded-md" />
           <h1 className="text-xl font-bold tracking-tight flex-1">Synapse</h1>
           {noteId && (
-            <button onClick={handleDelete} title="Delete note" className="text-gray-300 hover:text-red-500 transition-colors">
-              <Trash2 size={15} />
-            </button>
+            confirmDelete ? (
+              <div className="flex items-center gap-1.5">
+                <button onClick={handleDelete} className="text-xs text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded transition-colors">
+                  Delete
+                </button>
+                <button onClick={() => setConfirmDelete(false)} className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmDelete(true)} title="Delete note" className="text-gray-300 hover:text-red-500 transition-colors">
+                <Trash2 size={15} />
+              </button>
+            )
           )}
           <button onClick={signOut} title="Sign out" className="text-gray-400 hover:text-gray-700 transition-colors">
             <LogOut size={15} />
